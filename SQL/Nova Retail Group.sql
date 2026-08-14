@@ -68,8 +68,8 @@ WHERE unitPrice < 1000;
 
 -- COMMAND ----------
 
-SELECT satisfaction, 
-COUNT(feedbackID) AS Number_Of_Feedbacks
+SELECT  satisfaction, 
+        COUNT(feedbackID) AS Number_Of_Feedbacks
 FROM workspace.nova.customer_feedback
 GROUP BY satisfaction
 ORDER BY Number_Of_Feedbacks DESC;
@@ -118,9 +118,9 @@ HAVING COUNT(orderid) <=0 OR COUNT(orderid) IS NULL
 
 -- COMMAND ----------
 
-SELECT p.category, 
-ROUND(SUM(s.TotalSales), 2) AS Total_Revenue, 
-ROUND(SUM(s.Profit), 2) AS Total_Profit
+SELECT  p.category, 
+        ROUND(SUM(s.TotalSales), 2) AS Total_Revenue, 
+        ROUND(SUM(s.Profit), 2) AS Total_Profit
 FROM workspace.nova.products AS p
 INNER JOIN workspace.nova.sales AS s
 ON p.productID=s.productID
@@ -138,7 +138,15 @@ ORDER BY Total_Revenue DESC;
 
 -- COMMAND ----------
 
-
+SELECT  c.CustomerID, 
+        CONCAT( c.FirstName, ' ', c.LastName) AS Customer_Name,
+        ROUND(SUM(TotalSales), 2) AS Total_Purchase_Amount
+FROM workspace.nova.customers AS c
+LEFT JOIN workspace.nova.sales AS s
+ON c.customerid = s.customerid
+GROUP BY CONCAT( c.FirstName, ' ', c.LastName),  c.CustomerID
+ORDER BY Total_Purchase_Amount DESC
+LIMIT 5;
 
 -- COMMAND ----------
 
@@ -148,6 +156,14 @@ ORDER BY Total_Revenue DESC;
 -- MAGIC Order chronologically.**
 
 -- COMMAND ----------
+
+SELECT YEAR(OrderDate) AS Year_, 
+MONTH(OrderDate) AS Month_Number, 
+ROUND(SUM(TotalSales), 2) AS Total_Saless
+FROM workspace.nova.sales
+WHERE YEAR(OrderDate) = 2024
+GROUP BY YEAR(OrderDate), MONTH(OrderDate) 
+ORDER BY Year_ ASC, Month_Number ASC;
 
 
 
@@ -160,7 +176,12 @@ ORDER BY Total_Revenue DESC;
 
 -- COMMAND ----------
 
-
+SELECT  Channel, 
+        COUNT(OrderID) AS Number_Of_Orders, 
+        ROUND(AVG(TotalSales)) AS Average_Order_Value, 
+        ROUND(SUM(TotalSales)) AS Total_Revenue
+FROM workspace.nova.sales
+GROUP BY Channel;
 
 -- COMMAND ----------
 
@@ -169,6 +190,19 @@ ORDER BY Total_Revenue DESC;
 -- MAGIC For each product category, show the average customer rating. Include Category, 
 -- MAGIC Average Rating, and Number of Reviews. Only show categories with at least 50 
 -- MAGIC reviews.**
+
+-- COMMAND ----------
+
+SELECT p.Category, 
+ROUND(AVG(f.Rating)) AS Average_Rating, 
+COUNT(f.feedbackID) AS Number_of_Reviews
+FROM workspace.nova.customer_feedback AS f
+LEFT JOIN workspace.nova.sales AS s
+ON s.OrderID = f.OrderID 
+INNER JOIN workspace.nova.products AS p
+ON s.ProductID = p.ProductID
+GROUP BY p.Category
+HAVING COUNT(f.feedbackID) >= 50;
 
 -- COMMAND ----------
 
