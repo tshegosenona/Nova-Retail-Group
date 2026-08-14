@@ -76,14 +76,6 @@ ORDER BY Number_Of_Feedbacks DESC;
 
 -- COMMAND ----------
 
-SELECT * 
-FROM workspace.nova.sales; 
-
-SELECT *
-FROM workspace.nova.products;
-
--- COMMAND ----------
-
 -- MAGIC %md
 -- MAGIC ### **PART 2**
 
@@ -466,3 +458,77 @@ FROM product_totals pt
 LEFT JOIN product_ratings pr ON pt.ProductID = pr.ProductID
 ORDER BY pt.Total_Revenue ASC
 LIMIT 5;
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC ## **PART 5**
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC **Section 1: Overall Business Performance (15 points)**
+-- MAGIC Provide a summary of key business metrics: 
+-- MAGIC • Total revenue and profit for 2023-2024 
+-- MAGIC • Overall profit margin 
+-- MAGIC • Total number of orders and customers 
+-- MAGIC • Average order value
+
+-- COMMAND ----------
+
+SELECT
+    ROUND(SUM(TotalSales), 2) AS Total_Revenue,
+    ROUND(SUM(Profit), 2) AS Total_Profit,
+    ROUND((SUM(Profit) / SUM(TotalSales)) * 100, 2) AS Overall_Profit_Margin_Pct,
+    COUNT(OrderID) AS Total_Orders,
+    COUNT(DISTINCT CustomerID) AS Total_Customers,
+    ROUND(AVG(TotalSales), 2) AS Average_Order_Value
+FROM workspace.nova.sales;
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC ## **INSIGHT 1**
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC **Section 2: Top 3 Insights (20 points)** 
+-- MAGIC Identify and explain the three most important insights from your analysis. Each insight 
+-- MAGIC must be supported by SQL query results.
+
+-- COMMAND ----------
+
+SELECT p.Category, ROUND(SUM(s.TotalSales),2) AS Total_Revenue, ROUND(SUM(s.Profit),2) AS Total_Profit
+FROM workspace.nova.products p INNER JOIN workspace.nova.sales s ON p.ProductID = s.ProductID
+GROUP BY p.Category ORDER BY Total_Revenue DESC;
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC ## **INSIGHT 2**
+
+-- COMMAND ----------
+
+SELECT CASE WHEN DiscountPercent=0 THEN '0%' WHEN DiscountPercent BETWEEN 1 AND 10 THEN '1-10%'
+     WHEN DiscountPercent BETWEEN 11 AND 20 THEN '11-20%' WHEN DiscountPercent BETWEEN 21 AND 30
+     THEN '21-30%' END AS Discount_Band, ROUND((SUM(Profit)/SUM(TotalSales))*100,2) AS Margin_Pct
+FROM workspace.nova.sales
+GROUP BY Discount_Band;
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC ## **INSIGHT 3**
+
+-- COMMAND ----------
+
+SELECT c.Region, ROUND(SUM(s.TotalSales),2) AS Total_Sales,
+       RANK() OVER (ORDER BY SUM(s.TotalSales) DESC) AS Region_Rank
+FROM workspace.nova.customers c 
+INNER JOIN workspace.nova.sales s
+ ON c.CustomerID = s.CustomerID
+GROUP BY c.Region;
+
+-- COMMAND ----------
+
