@@ -10,14 +10,14 @@ For this project, I took on the role of Junior Data Analyst — tasked with anal
 
 ## Repository structure
 
-```
-Nova-Retail-Group/
-├── [`/Data`](./Data)     # Source CSVs: Products, Customers, Sales, CustomerFeedback
-├── [`/Docs`](./Docs)     # Full answer sheet, project brief
-├── [`/SQL`](./SQL)      # All SQL queries, organized by project part
-├── NovaRetail-ERD/   # ERD Image
-└── README.md
-```
+## Repository structure
+
+- [`/Data`](./Data) — Source CSVs: Products, Customers, Sales, CustomerFeedback
+- [`/Docs`](./Docs) — Full answer sheet and project brief
+- [`/SQL`](./SQL) — All SQL queries, organized by project part
+- [`NovaRetail-ERD.png`](./NovaRetail-ERD.png) — Entity-relationship diagram
+- `README.md` — you are here
+
 
 ## What problem did I solve?
 
