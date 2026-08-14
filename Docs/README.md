@@ -5,7 +5,7 @@ Supporting documentation for the Nova Retail Group SQL project.
 | File | Description |
 |---|---|
 | `Project Description.pdf` | The original project brief, provided by the course. Includes the company background, database schema documentation, and all assignment questions across five parts: Basic SQL, Intermediate SQL, Advanced SQL, Business Intelligence, and the Executive Management Report. |
-| `Nove Project-AnswerScript.pdf` | The complete, formatted answer sheet. Contains every SQL query written for the project, organized by part and question number, alongside the written business insights and strategic recommendations that accompany Parts 4 and 5. |
+| `Nova Project-AnswerScript.pdf` | The complete, formatted answer sheet. Contains every SQL query written for the project, organized by part and question number, alongside the written business insights and strategic recommendations that accompany Parts 4 and 5. |
 
 The entity-relationship diagram is located at the beginning of the answer script since it was produced before the queries. 
 
