@@ -15,7 +15,7 @@ Nova-Retail-Group/
 ├── Data/     # Source CSVs: Products, Customers, Sales, CustomerFeedback
 ├── Docs/     # Full answer sheet, project brief
 ├── SQL/      # All SQL queries, organized by project part
-├── NovaReatil_ERD/      # ERD Image
+├── NovaRetail-ERD/   # ERD Image
 └── README.md
 ```
 
