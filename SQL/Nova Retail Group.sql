@@ -376,11 +376,93 @@ ORDER BY Region_Rank;
 -- COMMAND ----------
 
 -- MAGIC %md
--- MAGIC
+-- MAGIC ###**Question 4.1: Customer Satisfaction vs. Repeat Purchases (20 points)** 
+-- MAGIC Analyze whether highly satisfied customers (rating 4-5) make more repeat purchases 
+-- MAGIC than less satisfied customers (rating 1-3). Show satisfaction level groups, average 
+-- MAGIC number of orders per customer, and total customers in each group. 
+-- MAGIC Your SQL Query:
 
 -- COMMAND ----------
 
-
+WITH customer_orders AS (
+    SELECT CustomerID, COUNT(*) AS Num_Orders
+    FROM workspace.nova.sales
+    GROUP BY CustomerID
+)
+SELECT
+    CASE WHEN f.Rating >= 4 THEN 'High Satisfaction (4-5)'
+         ELSE 'Low Satisfaction (1-3)' END AS Satisfaction_Group,
+    ROUND(AVG(co.Num_Orders), 2) AS Avg_Orders_Per_Customer,
+    COUNT(DISTINCT f.CustomerID) AS Total_Customers
+FROM workspace.nova.customer_feedback f
+JOIN customer_orders co ON f.CustomerID = co.CustomerID
+GROUP BY Satisfaction_Group;
 
 -- COMMAND ----------
 
+-- MAGIC %md
+-- MAGIC ## **INSIGHTS**
+-- MAGIC Happy customers (4-5 star ratings) ordered about the same number of times as unhappy customers (1-3 stars), roughly 6 orders each, so satisfaction barely made a difference. This means how happy someone is doesn't really predict whether they'll keep buying from Nove; people may just be shopping with from Nova out of habit or lack of other options. So management shouldn't assume that making customers happier will automatically lead to more repeat purchases
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC ##**Question 4.2: Discount Effectiveness (20 points)** 
+-- MAGIC Examine the relationship between discount percentage and profit. Create discount 
+-- MAGIC bands (0%, 1-10%, 11-20%, 21-30%) and show total sales, total profit, and profit margin 
+-- MAGIC for each band.
+
+-- COMMAND ----------
+
+SELECT
+    CASE
+        WHEN DiscountPercent = 0 THEN '0%'
+        WHEN DiscountPercent BETWEEN 1 AND 10 THEN '1-10%'
+        WHEN DiscountPercent BETWEEN 11 AND 20 THEN '11-20%'
+        WHEN DiscountPercent BETWEEN 21 AND 30 THEN '21-30%'
+    END AS Discount_Band,
+    ROUND(SUM(TotalSales), 2) AS Total_Sales,
+    ROUND(SUM(Profit), 2) AS Total_Profit,
+    ROUND((SUM(Profit) / SUM(TotalSales)) * 100, 2) AS Profit_Margin_Pct
+FROM workspace.nova.sales
+GROUP BY Discount_Band
+ORDER BY Discount_Band;
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC ##**INSIGHTS**
+-- MAGIC The bigger the discount, the less profit we make, margin drops from about 40% with no discount to under 19% at 21-30% off. This means big discounts are mostly just cutting into profit, without clear proof they're bringing in enough extra sales to make up for it. Management should think twice about offering such large discounts unless there's evidence they're actually worth it.
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC ### **Question 4.3: Product Portfolio Optimization (20 points)**
+-- MAGIC Identify underperforming products (bottom 5 by total revenue) and analyze whether they 
+-- MAGIC should be discontinued. Consider sales volume, profit margin, and customer ratings. 
+
+-- COMMAND ----------
+
+WITH product_totals AS (
+    SELECT p.ProductID, p.ProductName, p.Category,
+           SUM(s.TotalSales) AS Total_Revenue,
+           SUM(s.Profit) AS Total_Profit,
+           ROUND((SUM(s.Profit) * 1.0 / SUM(s.TotalSales)) * 100, 2) AS Profit_Margin_Pct
+    FROM workspace.nova.products AS p
+    JOIN workspace.nova.sales s ON p.ProductID = s.ProductID
+    GROUP BY p.ProductID, p.ProductName, p.Category
+),
+product_ratings AS (
+    SELECT s.ProductID,
+           ROUND(AVG(f.Rating), 2) AS Avg_Rating,
+           COUNT(f.FeedbackID) AS Num_Reviews
+    FROM workspace.nova.customer_feedback f
+    JOIN workspace.nova.sales s ON f.OrderID = s.OrderID
+    GROUP BY s.ProductID
+)
+SELECT pt.ProductName, pt.Category, pt.Total_Revenue, pt.Profit_Margin_Pct,
+       pr.Avg_Rating, pr.Num_Reviews
+FROM product_totals pt
+LEFT JOIN product_ratings pr ON pt.ProductID = pr.ProductID
+ORDER BY pt.Total_Revenue ASC
+LIMIT 5;
