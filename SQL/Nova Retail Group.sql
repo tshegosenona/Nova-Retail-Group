@@ -218,6 +218,53 @@ HAVING COUNT(f.feedbackID) >= 50;
 
 -- COMMAND ----------
 
+-- MAGIC %md
+-- MAGIC Sales has one row per transaction, so first sum + group to get one total per product
+-- MAGIC Once every product has its one total, box them by category
+-- MAGIC Rank within each box
+-- MAGIC
+
+-- COMMAND ----------
+
+
+/*
+SELECT  p.Category, 
+        p.ProductName, 
+        ROUND(SUM(s.TotalSales), 2) AS Total_Sales,
+RANK() OVER (PARTITION BY p.Category ORDER BY SUM(s.TotalSales) DESC) AS Product_Rank
+FROM workspace.nova.products AS p
+INNER JOIN workspace.nova.sales AS s
+ON p.ProductID = s.ProductID
+GROUP BY p.Category, 
+         p.ProductName;
+*/
+
+/*
+-- Step 1: collapse Sales (many rows per product) into ONE row per
+    -- product, with its total revenue.
+    - Step 2: rank products within their own category (PARTITION BY),
+            -- highest revenue first. Note we re-use SUM(s.TotalSales) here
+            -- instead of the alias Total_Sales -- aliases aren't available
+            -- yet inside the same SELECT's window function.
+            -- Step 3: now that Product_Rank is a real column in this outer layer,
+-- we can finally filter to just the #1 in each category.
+*/
+
+SELECT Category, ProductName, Total_Sales
+FROM (
+    SELECT  p.Category, 
+            p.ProductName, 
+            ROUND(SUM(s.TotalSales), 2) AS Total_Sales,
+            RANK() OVER (PARTITION BY p.Category ORDER BY SUM(s.TotalSales) DESC) AS Product_Rank
+    FROM workspace.nova.products AS p
+    INNER JOIN workspace.nova.sales AS s
+    ON p.ProductID = s.ProductID
+    GROUP BY p.Category, 
+             p.ProductName
+) AS ranked_products
+WHERE Product_Rank = 1;
+       
+
 
 
 -- COMMAND ----------
@@ -230,7 +277,19 @@ HAVING COUNT(f.feedbackID) >= 50;
 
 -- COMMAND ----------
 
-
+SELECT c.CustomerID,
+       CONCAT(c.FirstName, ' ', c.LastName) AS Customer_Name,   
+       c.Region,
+       c.Channel AS Primary_Channel,
+       COUNT(s.OrderID) AS Number_Of_Orders,
+       ROUND(SUM(s.TotalSales), 2) AS Total_Purchases,
+       ROUND(AVG(s.TotalSales), 2) AS Average_Order_Value
+FROM workspace.nova.customers AS c
+INNER JOIN workspace.nova.sales AS s 
+ON c.CustomerID = s.CustomerID
+GROUP BY c.CustomerID, c.FirstName, c.LastName, c.Region, c.Channel
+HAVING COUNT(s.OrderID) > 3
+ORDER BY Total_Purchases DESC;
 
 -- COMMAND ----------
 
@@ -242,7 +301,14 @@ HAVING COUNT(f.feedbackID) >= 50;
 
 -- COMMAND ----------
 
-
+SELECT p.ProductName, p.Category,
+       ROUND(SUM(s.TotalSales), 2) AS Total_Sales,
+       ROUND(SUM(s.Profit), 2) AS Total_Profit,
+       ROUND((SUM(s.Profit) / SUM(s.TotalSales)) * 100, 2) AS Profit_Margin_Pct
+FROM workspace.nova.products AS p
+INNER JOIN workspace.nova.sales AS s ON p.ProductID = s.ProductID
+GROUP BY p.ProductName, p.Category
+ORDER BY Profit_Margin_Pct DESC;
 
 -- COMMAND ----------
 
@@ -253,7 +319,28 @@ HAVING COUNT(f.feedbackID) >= 50;
 
 -- COMMAND ----------
 
+-- MAGIC %md
+-- MAGIC -- Goal: compare 2023 vs 2024 totals and calculate % growth.
+-- MAGIC -- Approach: CTE builds one small "year -> total" lookup table, then
+-- MAGIC -- the outer query pulls the 2023 and 2024 rows out of it separately
+-- MAGIC -- to do the growth math -- this is the "calculate once, reuse the
+-- MAGIC -- named result multiple times" pattern CTEs exist for.
 
+-- COMMAND ----------
+
+WITH yearly_sales AS (
+    SELECT YEAR(OrderDate) AS Sale_Year, SUM(TotalSales) AS Total_Sales
+    FROM workspace.nova.sales
+    GROUP BY YEAR(OrderDate)
+)
+SELECT
+    (SELECT Total_Sales FROM yearly_sales WHERE Sale_Year = 2023) AS Sales_2023,
+    (SELECT Total_Sales FROM yearly_sales WHERE Sale_Year = 2024) AS Sales_2024,
+    ROUND(
+      ((SELECT Total_Sales FROM yearly_sales WHERE Sale_Year = 2024) -
+       (SELECT Total_Sales FROM yearly_sales WHERE Sale_Year = 2023)) * 100.0 /
+       (SELECT Total_Sales FROM yearly_sales WHERE Sale_Year = 2023), 2
+    ) AS Growth_Pct;
 
 -- COMMAND ----------
 
@@ -261,6 +348,30 @@ HAVING COUNT(f.feedbackID) >= 50;
 -- MAGIC **Question 3.5: Regional Performance Ranking (15 points) 
 -- MAGIC Rank regions by total sales. Use the RANK() or ROW_NUMBER() window function. 
 -- MAGIC Show Region, Total Sales, Total Orders, and Rank.**
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC -- No PARTITION BY here on purpose: we want ONE ranking across
+-- MAGIC        -- all regions together, not a separate ranking "within" each
+-- MAGIC        -- region (which would be meaningless -- there's only one row
+-- MAGIC        -- per region anyway once grouped).
+
+-- COMMAND ----------
+
+SELECT c.Region,
+       ROUND(SUM(s.TotalSales), 2) AS Total_Sales,
+       COUNT(s.OrderID) AS Total_Orders,
+       RANK() OVER (ORDER BY SUM(s.TotalSales) DESC) AS Region_Rank
+FROM workspace.nova.customers AS c
+INNER JOIN workspace.nova.sales AS s ON c.CustomerID = s.CustomerID
+GROUP BY c.Region
+ORDER BY Region_Rank;
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC ### **PART 4**
 
 -- COMMAND ----------
 
