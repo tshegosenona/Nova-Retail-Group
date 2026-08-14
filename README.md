@@ -12,9 +12,9 @@ For this project, I took on the role of Junior Data Analyst — tasked with anal
 
 ```
 Nova-Retail-Group/
-├── Data/     # Source CSVs: Products, Customers, Sales, CustomerFeedback
-├── Docs/     # Full answer sheet, project brief
-├── SQL/      # All SQL queries, organized by project part
+├── [`/Data`](./Data)     # Source CSVs: Products, Customers, Sales, CustomerFeedback
+├── [`/Docs`](./Docs)     # Full answer sheet, project brief
+├── [`/SQL`](./SQL)      # All SQL queries, organized by project part
 ├── NovaRetail-ERD/   # ERD Image
 └── README.md
 ```
