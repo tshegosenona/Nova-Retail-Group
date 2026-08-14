@@ -10,7 +10,12 @@
 
 -- COMMAND ----------
 
-
+SELECT  productID, 
+        productName, 
+        unitPrice 
+FROM workspace.nova.products
+WHERE category = 'Electronics'
+ORDER BY unitPrice DESC;
 
 -- COMMAND ----------
 
@@ -19,16 +24,25 @@
 
 -- COMMAND ----------
 
-
+SELECT region, COUNT(DISTINCT customerID) AS Total_Customers
+FROM workspace.nova.customers
+GROUP BY region;
 
 -- COMMAND ----------
 
 -- MAGIC %md
--- MAGIC **Question 1.3: Show the 10 most recent orders. Display OrderID, OrderDate, and TotalSales.**
+-- MAGIC **Question 1.3: Recent Orders (5 points) 
+-- MAGIC Show the 10 most recent orders. Display OrderID, OrderDate, and TotalSales.** 
 
 -- COMMAND ----------
 
-
+-- DBTITLE 1,It is worth noting here that some orders were made on the same day, as such, adding a nested order by to also see which orderid was the last one  is a nice to have for tie breakers
+SELECT  orderID, 
+        orderDate, 
+        TotalSales
+FROM workspace.nova.sales
+ORDER BY orderDate DESC, orderID DESC
+LIMIT 10;
 
 -- COMMAND ----------
 
@@ -39,7 +53,11 @@
 
 -- COMMAND ----------
 
-
+SELECT  ProductName, 
+        category, 
+        unitPrice
+FROM workspace.nova.products
+WHERE unitPrice < 1000;
 
 -- COMMAND ----------
 
@@ -47,6 +65,22 @@
 -- MAGIC **Question 1.5: Customer Satisfaction Summary (5 points) 
 -- MAGIC Count how many feedback responses exist for each Satisfaction level. Order by count 
 -- MAGIC descending.** 
+
+-- COMMAND ----------
+
+SELECT satisfaction, 
+COUNT(feedbackID) AS Number_Of_Feedbacks
+FROM workspace.nova.customer_feedback
+GROUP BY satisfaction
+ORDER BY Number_Of_Feedbacks DESC;
+
+-- COMMAND ----------
+
+SELECT * 
+FROM workspace.nova.sales; 
+
+SELECT *
+FROM workspace.nova.products;
 
 -- COMMAND ----------
 
@@ -61,6 +95,37 @@
 -- MAGIC Revenue, and Total Profit. Order by revenue descending.**
 
 -- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC I chose an INNER JOIN for this query after first verifying (via a separate diagnostic query) that every category in the dataset has at least one associated sale. Since there are no zero-sale categories to protect, an INNER JOIN and a LEFT JOIN would return identical results here, so I used the simpler INNER JOIN. However, this decision was data-dependent, not a general rule — if a category with zero sales existed (or could exist in future data), a LEFT JOIN with Products as the anchor table would be necessary to avoid silently dropping that category from the results.
+-- MAGIC
+-- MAGIC
+-- MAGIC COUNT(*) counts rows. COUNT(column) counts non-NULL values in that column. For checking "did a match actually happen," always use COUNT(specific_column), never COUNT(*), 5
+
+-- COMMAND ----------
+
+/* EDA
+```
+SELECT p.category, 
+COUNT(s.orderid) as numberofOrders
+FROM workspace.nova.products AS p -- LEFT TABLE
+LEFT JOIN workspace.nova.sales AS s -- 
+ON p.productID=s.productID
+GROUP BY p.category
+HAVING COUNT(orderid) <=0 OR COUNT(orderid) IS NULL
+```
+*/
+
+-- COMMAND ----------
+
+SELECT p.category, 
+ROUND(SUM(s.TotalSales), 2) AS Total_Revenue, 
+ROUND(SUM(s.Profit), 2) AS Total_Profit
+FROM workspace.nova.products AS p
+INNER JOIN workspace.nova.sales AS s
+ON p.productID=s.productID
+GROUP BY p.category
+ORDER BY Total_Revenue DESC;
 
 
 
