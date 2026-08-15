@@ -10,8 +10,6 @@ For this project, I took on the role of Junior Data Analyst — tasked with anal
 
 ## Repository structure
 
-## Repository structure
-
 - [`/Data`](./Data) — Source CSVs: Products, Customers, Sales, CustomerFeedback
 - [`/Docs`](./Docs) — Full answer sheet and project brief
 - [`/SQL`](./SQL) — All SQL queries, organized by project part
